@@ -9,6 +9,79 @@ import Icon from '@/components/ui/icon';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
+  const [currentLesson, setCurrentLesson] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+
+  const lessons = [
+    {
+      id: 1,
+      title: 'Введение в Python',
+      duration: '15 мин',
+      type: 'video',
+      completed: true,
+      videoUrl: 'https://www.youtube.com/embed/kqtD5dpn9C8'
+    },
+    {
+      id: 2,
+      title: 'Переменные и типы данных',
+      duration: '20 мин',
+      type: 'video',
+      completed: true,
+      videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw'
+    },
+    {
+      id: 3,
+      title: 'Условные операторы',
+      duration: '18 мин',
+      type: 'video',
+      completed: false,
+      videoUrl: 'https://www.youtube.com/embed/PqFKRqpHrjw'
+    },
+    {
+      id: 4,
+      title: 'Проверка знаний: Базовый синтаксис',
+      duration: '10 мин',
+      type: 'quiz',
+      completed: false
+    },
+    {
+      id: 5,
+      title: 'Циклы for и while',
+      duration: '25 мин',
+      type: 'video',
+      completed: false,
+      videoUrl: 'https://www.youtube.com/embed/94UHCEmprCY'
+    }
+  ];
+
+  const quizQuestions = [
+    {
+      id: 1,
+      question: 'Какой оператор используется для вывода текста в Python?',
+      options: ['echo()', 'print()', 'console.log()', 'write()'],
+      correct: 1
+    },
+    {
+      id: 2,
+      question: 'Какой тип данных используется для хранения целых чисел?',
+      options: ['string', 'float', 'int', 'boolean'],
+      correct: 2
+    },
+    {
+      id: 3,
+      question: 'Как объявить переменную в Python?',
+      options: ['var x = 5', 'let x = 5', 'x = 5', 'int x = 5'],
+      correct: 2
+    },
+    {
+      id: 4,
+      question: 'Какой оператор используется для сравнения равенства?',
+      options: ['=', '==', '===', 'equals()'],
+      correct: 1
+    }
+  ];
 
   const courses = [
     {
@@ -20,7 +93,9 @@ const Index = () => {
       students: 12453,
       rating: 4.8,
       duration: '8 недель',
-      color: 'from-purple-500 to-pink-500'
+      color: 'from-purple-500 to-pink-500',
+      lessonsCount: 24,
+      completedLessons: 16
     },
     {
       id: 2,
@@ -31,7 +106,9 @@ const Index = () => {
       students: 8921,
       rating: 4.9,
       duration: '12 недель',
-      color: 'from-pink-500 to-orange-500'
+      color: 'from-pink-500 to-orange-500',
+      lessonsCount: 36,
+      completedLessons: 0
     },
     {
       id: 3,
@@ -42,7 +119,9 @@ const Index = () => {
       students: 15632,
       rating: 4.7,
       duration: '10 недель',
-      color: 'from-orange-500 to-purple-500'
+      color: 'from-orange-500 to-purple-500',
+      lessonsCount: 30,
+      completedLessons: 0
     },
     {
       id: 4,
@@ -53,9 +132,43 @@ const Index = () => {
       students: 9845,
       rating: 4.9,
       duration: '6 недель',
-      color: 'from-blue-500 to-purple-500'
+      color: 'from-blue-500 to-purple-500',
+      lessonsCount: 18,
+      completedLessons: 5
     }
   ];
+
+  const handleStartCourse = (courseId: number) => {
+    setSelectedCourse(courseId);
+    setCurrentLesson(0);
+    setActiveTab('learning');
+  };
+
+  const handleNextLesson = () => {
+    if (currentLesson < lessons.length - 1) {
+      setCurrentLesson(currentLesson + 1);
+      setShowQuiz(false);
+    }
+  };
+
+  const handlePrevLesson = () => {
+    if (currentLesson > 0) {
+      setCurrentLesson(currentLesson - 1);
+      setShowQuiz(false);
+    }
+  };
+
+  const handleQuizAnswer = (questionId: number, optionIndex: number) => {
+    setQuizAnswers({ ...quizAnswers, [questionId]: optionIndex });
+  };
+
+  const calculateQuizScore = () => {
+    let correct = 0;
+    quizQuestions.forEach((q) => {
+      if (quizAnswers[q.id] === q.correct) correct++;
+    });
+    return Math.round((correct / quizQuestions.length) * 100);
+  };
 
   const activeCourses = courses.filter(c => c.progress > 0);
   const stats = {
@@ -192,7 +305,7 @@ const Index = () => {
                           </div>
                           <Progress value={course.progress} className="h-2" />
                         </div>
-                        <Button className="w-full" variant="default">
+                        <Button className="w-full" variant="default" onClick={() => handleStartCourse(course.id)}>
                           <Icon name="PlayCircle" size={18} className="mr-2" />
                           Продолжить
                         </Button>
@@ -249,7 +362,7 @@ const Index = () => {
                               {course.duration}
                             </span>
                           </div>
-                          <Button className="w-full">
+                          <Button className="w-full" onClick={() => handleStartCourse(course.id)}>
                             <Icon name="Sparkles" size={18} className="mr-2" />
                             Начать курс
                           </Button>
@@ -323,7 +436,7 @@ const Index = () => {
                   <CardContent className="space-y-4">
                     <Progress value={course.progress} className="h-3" />
                     <div className="flex gap-2">
-                      <Button className="flex-1">
+                      <Button className="flex-1" onClick={() => handleStartCourse(course.id)}>
                         <Icon name="PlayCircle" size={18} className="mr-2" />
                         Продолжить урок
                       </Button>
@@ -334,6 +447,234 @@ const Index = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'learning' && selectedCourse && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" onClick={() => setActiveTab('my-courses')}>
+                <Icon name="ArrowLeft" size={20} className="mr-2" />
+                Назад к курсам
+              </Button>
+              <div>
+                <h2 className="text-3xl font-bold">Основы Python</h2>
+                <p className="text-muted-foreground">Урок {currentLesson + 1} из {lessons.length}</p>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="overflow-hidden">
+                  {lessons[currentLesson].type === 'video' ? (
+                    <div className="aspect-video bg-black">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={lessons[currentLesson].videoUrl}
+                        title={lessons[currentLesson].title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-8">
+                      {!showQuiz ? (
+                        <div className="text-center py-12">
+                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center mx-auto mb-6">
+                            <Icon name="ClipboardCheck" size={40} className="text-white" />
+                          </div>
+                          <h3 className="text-2xl font-bold mb-4">Готовы проверить знания?</h3>
+                          <p className="text-muted-foreground mb-6">Пройдите тест из {quizQuestions.length} вопросов</p>
+                          <Button size="lg" onClick={() => setShowQuiz(true)}>
+                            <Icon name="Play" size={20} className="mr-2" />
+                            Начать тест
+                          </Button>
+                        </div>
+                      ) : Object.keys(quizAnswers).length === quizQuestions.length ? (
+                        <div className="text-center py-12">
+                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-6">
+                            <Icon name="Trophy" size={40} className="text-white" />
+                          </div>
+                          <h3 className="text-2xl font-bold mb-4">Тест завершен!</h3>
+                          <div className="text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+                            {calculateQuizScore()}%
+                          </div>
+                          <p className="text-muted-foreground mb-6">
+                            {calculateQuizScore() >= 80 ? 'Отличный результат! 🎉' : 'Продолжайте учиться! 💪'}
+                          </p>
+                          <div className="flex gap-3 justify-center">
+                            <Button variant="outline" onClick={() => { setShowQuiz(false); setQuizAnswers({}); }}>
+                              Пройти снова
+                            </Button>
+                            <Button onClick={handleNextLesson}>
+                              Следующий урок
+                              <Icon name="ArrowRight" size={18} className="ml-2" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <h3 className="text-2xl font-bold mb-6">{lessons[currentLesson].title}</h3>
+                          {quizQuestions.map((question, qIndex) => (
+                            <Card key={question.id} className="p-6">
+                              <h4 className="font-semibold mb-4">
+                                {qIndex + 1}. {question.question}
+                              </h4>
+                              <div className="space-y-2">
+                                {question.options.map((option, oIndex) => (
+                                  <button
+                                    key={oIndex}
+                                    onClick={() => handleQuizAnswer(question.id, oIndex)}
+                                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                                      quizAnswers[question.id] === oIndex
+                                        ? 'border-purple-600 bg-purple-50'
+                                        : 'border-gray-200 hover:border-purple-300'
+                                    }`}
+                                  >
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <CardContent className="p-6 border-t">
+                    <div className="flex items-center justify-between">
+                      <Button
+                        variant="outline"
+                        onClick={handlePrevLesson}
+                        disabled={currentLesson === 0}
+                      >
+                        <Icon name="ChevronLeft" size={20} className="mr-2" />
+                        Предыдущий
+                      </Button>
+                      <div className="text-center">
+                        <h3 className="font-bold text-lg">{lessons[currentLesson].title}</h3>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                          <Icon name="Clock" size={14} />
+                          {lessons[currentLesson].duration}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleNextLesson}
+                        disabled={currentLesson === lessons.length - 1 || (lessons[currentLesson].type === 'quiz' && Object.keys(quizAnswers).length < quizQuestions.length)}
+                      >
+                        Следующий
+                        <Icon name="ChevronRight" size={20} className="ml-2" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Описание урока</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-4">
+                      {lessons[currentLesson].type === 'video' 
+                        ? 'В этом видео вы изучите ключевые концепции и научитесь применять их на практике.'
+                        : 'Проверьте свои знания, ответив на вопросы по пройденному материалу.'}
+                    </p>
+                    <div className="flex gap-2">
+                      <Badge>
+                        <Icon name="BookOpen" size={12} className="mr-1" />
+                        {lessons[currentLesson].type === 'video' ? 'Видео' : 'Тест'}
+                      </Badge>
+                      <Badge variant="secondary">
+                        <Icon name="Clock" size={12} className="mr-1" />
+                        {lessons[currentLesson].duration}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Icon name="List" size={20} />
+                      Программа курса
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="space-y-1">
+                      {lessons.map((lesson, index) => (
+                        <button
+                          key={lesson.id}
+                          onClick={() => { setCurrentLesson(index); setShowQuiz(false); }}
+                          className={`w-full text-left p-4 hover:bg-muted/50 transition-colors border-l-4 ${
+                            currentLesson === index
+                              ? 'border-purple-600 bg-purple-50'
+                              : lesson.completed
+                              ? 'border-green-500'
+                              : 'border-transparent'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              lesson.completed
+                                ? 'bg-green-500 text-white'
+                                : currentLesson === index
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-200 text-gray-600'
+                            }`}>
+                              {lesson.completed ? (
+                                <Icon name="Check" size={16} />
+                              ) : lesson.type === 'quiz' ? (
+                                <Icon name="ClipboardCheck" size={16} />
+                              ) : (
+                                <Icon name="Play" size={16} />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{lesson.title}</p>
+                              <p className="text-xs text-muted-foreground">{lesson.duration}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Icon name="Target" size={20} />
+                      Ваш прогресс
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm">Пройдено уроков</span>
+                          <span className="text-sm font-semibold">2 из 5</span>
+                        </div>
+                        <Progress value={40} className="h-2" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 pt-4 border-t">
+                        <div>
+                          <p className="text-2xl font-bold">16</p>
+                          <p className="text-xs text-muted-foreground">Часов обучения</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">92%</p>
+                          <p className="text-xs text-muted-foreground">Средний балл</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         )}
