@@ -13,6 +13,13 @@ const Index = () => {
   const [currentLesson, setCurrentLesson] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+  const [notes, setNotes] = useState<{id: number, lessonId: number, text: string, timestamp: string}[]>([
+    { id: 1, lessonId: 1, text: 'Важно помнить про отступы в Python - они определяют блоки кода', timestamp: '5:32' },
+    { id: 2, lessonId: 2, text: 'Типы данных: int, float, string, boolean', timestamp: '12:45' }
+  ]);
+  const [newNoteText, setNewNoteText] = useState('');
+  const [bookmarks, setBookmarks] = useState<number[]>([1, 2]);
+  const [showNoteInput, setShowNoteInput] = useState(false);
 
   const lessons = [
     {
@@ -170,6 +177,34 @@ const Index = () => {
     return Math.round((correct / quizQuestions.length) * 100);
   };
 
+  const handleAddNote = () => {
+    if (newNoteText.trim()) {
+      const newNote = {
+        id: Date.now(),
+        lessonId: lessons[currentLesson].id,
+        text: newNoteText,
+        timestamp: '0:00'
+      };
+      setNotes([...notes, newNote]);
+      setNewNoteText('');
+      setShowNoteInput(false);
+    }
+  };
+
+  const handleDeleteNote = (noteId: number) => {
+    setNotes(notes.filter(n => n.id !== noteId));
+  };
+
+  const toggleBookmark = (lessonId: number) => {
+    if (bookmarks.includes(lessonId)) {
+      setBookmarks(bookmarks.filter(id => id !== lessonId));
+    } else {
+      setBookmarks([...bookmarks, lessonId]);
+    }
+  };
+
+  const lessonNotes = notes.filter(n => n.lessonId === lessons[currentLesson]?.id);
+
   const activeCourses = courses.filter(c => c.progress > 0);
   const stats = {
     completed: 12,
@@ -216,6 +251,14 @@ const Index = () => {
               >
                 <Icon name="Laptop" size={18} />
                 Мои курсы
+              </Button>
+              <Button 
+                variant={activeTab === 'notes' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('notes')}
+                className="gap-2"
+              >
+                <Icon name="StickyNote" size={18} />
+                Заметки
               </Button>
               <Button 
                 variant={activeTab === 'profile' ? 'default' : 'ghost'}
@@ -373,6 +416,58 @@ const Index = () => {
                 </div>
               </TabsContent>
             </Tabs>
+          </div>
+        )}
+
+        {activeTab === 'notes' && (
+          <div className="space-y-8 animate-fade-in">
+            <div>
+              <h2 className="text-4xl font-bold mb-2">Мои заметки</h2>
+              <p className="text-muted-foreground text-lg">Все важные моменты в одном месте</p>
+            </div>
+
+            {notes.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-4">
+                {notes.map((note) => {
+                  const lesson = lessons.find(l => l.id === note.lessonId);
+                  return (
+                    <Card key={note.id} className="overflow-hidden">
+                      <div className="h-1 bg-gradient-to-r from-purple-500 to-pink-500" />
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <Badge variant="secondary" className="mb-2">
+                              <Icon name="BookOpen" size={12} className="mr-1" />
+                              {lesson?.title}
+                            </Badge>
+                            <CardDescription className="flex items-center gap-1 text-xs">
+                              <Icon name="Clock" size={12} />
+                              {note.timestamp}
+                            </CardDescription>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleDeleteNote(note.id)}
+                          >
+                            <Icon name="Trash2" size={16} className="text-red-500" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm">{note.text}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="p-12 text-center">
+                <Icon name="StickyNote" size={48} className="mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">Заметок пока нет</h3>
+                <p className="text-muted-foreground">Добавляйте заметки во время просмотра уроков</p>
+              </Card>
+            )}
           </div>
         )}
 
@@ -572,7 +667,7 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
+<Card>
                   <CardHeader>
                     <CardTitle>Описание урока</CardTitle>
                   </CardHeader>
@@ -594,6 +689,74 @@ const Index = () => {
                     </div>
                   </CardContent>
                 </Card>
+
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Icon name="StickyNote" size={20} className="text-purple-600" />
+                        Мои заметки
+                      </CardTitle>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setShowNoteInput(!showNoteInput)}
+                      >
+                        <Icon name="Plus" size={16} className="mr-1" />
+                        Добавить
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {showNoteInput && (
+                      <div className="mb-4 space-y-2">
+                        <textarea
+                          value={newNoteText}
+                          onChange={(e) => setNewNoteText(e.target.value)}
+                          placeholder="Запишите важную мысль..."
+                          className="w-full p-3 border rounded-lg min-h-[80px] focus:outline-none focus:ring-2 focus:ring-purple-600"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleAddNote}>
+                            Сохранить
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setShowNoteInput(false); setNewNoteText(''); }}>
+                            Отмена
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    {lessonNotes.length > 0 ? (
+                      <div className="space-y-3">
+                        {lessonNotes.map((note) => (
+                          <div key={note.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm">{note.text}</p>
+                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                  <Icon name="Clock" size={10} />
+                                  {note.timestamp}
+                                </p>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleDeleteNote(note.id)}
+                              >
+                                <Icon name="Trash2" size={14} className="text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Здесь будут ваши заметки к уроку
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
 
               <div className="space-y-6">
@@ -610,7 +773,7 @@ const Index = () => {
                         <button
                           key={lesson.id}
                           onClick={() => { setCurrentLesson(index); setShowQuiz(false); }}
-                          className={`w-full text-left p-4 hover:bg-muted/50 transition-colors border-l-4 ${
+                          className={`w-full text-left p-4 hover:bg-muted/50 transition-colors border-l-4 relative group ${
                             currentLesson === index
                               ? 'border-purple-600 bg-purple-50'
                               : lesson.completed
@@ -635,9 +798,25 @@ const Index = () => {
                               )}
                             </div>
                             <div className="flex-1">
-                              <p className="font-medium text-sm">{lesson.title}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-sm">{lesson.title}</p>
+                                {bookmarks.includes(lesson.id) && (
+                                  <Icon name="Bookmark" size={14} className="text-purple-600" fill="currentColor" />
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">{lesson.duration}</p>
                             </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleBookmark(lesson.id); }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-purple-100 rounded"
+                            >
+                              <Icon 
+                                name="Bookmark" 
+                                size={16} 
+                                className={bookmarks.includes(lesson.id) ? 'text-purple-600' : 'text-gray-400'}
+                                fill={bookmarks.includes(lesson.id) ? 'currentColor' : 'none'}
+                              />
+                            </button>
                           </div>
                         </button>
                       ))}
@@ -645,7 +824,7 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
+<Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Icon name="Target" size={20} />
@@ -672,6 +851,35 @@ const Index = () => {
                         </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Icon name="Bookmark" size={20} className="text-purple-600" />
+                      Закладки
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {bookmarks.length > 0 ? (
+                      <div className="space-y-2">
+                        {lessons.filter(l => bookmarks.includes(l.id)).map((lesson) => (
+                          <div 
+                            key={lesson.id} 
+                            className="p-3 bg-purple-50 border border-purple-200 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+                            onClick={() => setCurrentLesson(lessons.findIndex(l => l.id === lesson.id))}
+                          >
+                            <p className="text-sm font-medium">{lesson.title}</p>
+                            <p className="text-xs text-muted-foreground">{lesson.duration}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Добавьте закладки на важные уроки
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               </div>
